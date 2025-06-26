@@ -1,52 +1,35 @@
 const { jsPDF } = window.jspdf;
-let selectedImages = [];
+let images = [];
 
-document.getElementById("imageInput").addEventListener("change", (e) => {
-  selectedImages = Array.from(e.target.files);
+document.getElementById("imageInput").onchange = e => {
+  images = [...e.target.files];
   const preview = document.getElementById("preview");
   preview.innerHTML = "";
-
-  selectedImages.forEach((imageFile) => {
-    const imgElement = document.createElement("img");
-    imgElement.src = URL.createObjectURL(imageFile);
-    preview.appendChild(imgElement);
+  images.forEach(file => {
+    const img = document.createElement("img");
+    img.src = URL.createObjectURL(file);
+    preview.appendChild(img);
   });
-});
+};
 
-document.getElementById("convertBtn").addEventListener("click", () => {
-  if (selectedImages.length === 0) {
-    alert("Please select image files first.");
-    return;
-  }
-
+document.getElementById("convertBtn").onclick = () => {
+  if (images.length === 0) { alert("Select images first"); return; }
   const pdf = new jsPDF();
-
-  let loadedCount = 0;
-
-  selectedImages.forEach((file, index) => {
+  let done = 0;
+  images.forEach((file, i) => {
     const reader = new FileReader();
-
-    reader.onload = function (e) {
+    reader.onload = ev => {
       const img = new Image();
-      img.src = e.target.result;
-
-      img.onload = function () {
-        const width = pdf.internal.pageSize.getWidth();
-        const height = (img.height * width) / img.width;
-
-        if (index !== 0) {
-          pdf.addPage();
-        }
-
-        pdf.addImage(img, "JPEG", 0, 0, width, height);
-        loadedCount++;
-
-        if (loadedCount === selectedImages.length) {
-          pdf.save("converted.pdf");
-        }
+      img.src = ev.target.result;
+      img.onload = () => {
+        const w = pdf.internal.pageSize.getWidth();
+        const h = (img.height * w) / img.width;
+        if (i > 0) pdf.addPage();
+        pdf.addImage(img, "JPEG", 0, 0, w, h);
+        done++;
+        if (done === images.length) pdf.save("converted.pdf");
       };
     };
-
     reader.readAsDataURL(file);
   });
-});
+};
